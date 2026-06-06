@@ -1,4 +1,4 @@
-use std::alloc::{alloc, dealloc, realloc, Layout};
+use std::alloc::{Layout, alloc, dealloc, realloc};
 use std::ptr;
 
 const DEFAULT_CAPACITY: usize = 16;
@@ -7,31 +7,43 @@ const DEFAULT_CAPACITY: usize = 16;
 pub struct Vector<T> {
     ptr: *mut T,
     capacity: usize,
-    size: usize
+    size: usize,
 }
 
 impl<T> Drop for Vector<T> {
     fn drop(&mut self) {
         unsafe {
             if !self.ptr.is_null() {
-                dealloc(self.ptr as *mut u8, Layout::array::<T>(self.capacity).unwrap())
+                dealloc(
+                    self.ptr as *mut u8,
+                    Layout::array::<T>(self.capacity).unwrap(),
+                )
             }
+        }
+    }
+}
+
+impl<T> Default for Vector<T> {
+    fn default() -> Self {
+        Self {
+            ptr: ptr::null_mut(),
+            capacity: 0,
+            size: 0,
         }
     }
 }
 
 impl<T: Default + Copy + PartialEq> Vector<T> {
     pub fn new() -> Self {
-        Self {
-            ptr: ptr::null_mut(),
-            capacity: 0,
-            size: 0
-        }
+        Self::default()
     }
 
     fn resize(&mut self, new_capacity: usize) {
         let (new_cap, new_layout) = if self.capacity == 0 {
-            (DEFAULT_CAPACITY, Layout::array::<T>(DEFAULT_CAPACITY).unwrap())
+            (
+                DEFAULT_CAPACITY,
+                Layout::array::<T>(DEFAULT_CAPACITY).unwrap(),
+            )
         } else {
             (new_capacity, Layout::array::<T>(new_capacity).unwrap())
         };
@@ -55,11 +67,17 @@ impl<T: Default + Copy + PartialEq> Vector<T> {
         idx > self.capacity || idx > self.size - 1
     }
 
-    pub fn size(&self) -> usize { self.size }
+    pub fn size(&self) -> usize {
+        self.size
+    }
 
-    pub fn capacity(&self) -> usize { self.capacity }
+    pub fn capacity(&self) -> usize {
+        self.capacity
+    }
 
-    pub fn is_empty(&self) -> bool { self.size == 0 }
+    pub fn is_empty(&self) -> bool {
+        self.size == 0
+    }
 
     pub fn at(&self, idx: usize) -> Result<T, String> {
         if self.is_out_of_bounds(idx) {
@@ -96,7 +114,9 @@ impl<T: Default + Copy + PartialEq> Vector<T> {
     }
 
     pub fn pop(&mut self) -> Result<T, String> {
-        if self.is_empty() { return Err("Vector is empty".to_string()); };
+        if self.is_empty() {
+            return Err("Vector is empty".to_string());
+        };
         let res = unsafe {
             let v = self.at(self.size - 1).unwrap();
             self.ptr.add(self.size - 1).write(T::default());
@@ -131,7 +151,9 @@ impl<T: Default + Copy + PartialEq> Vector<T> {
         unsafe {
             for i in (0..self.size).rev() {
                 match self.at(i) {
-                    Ok(_) if *self.ptr.add(i) == item => { let _ = self.delete(i); } ,
+                    Ok(_) if *self.ptr.add(i) == item => {
+                        let _ = self.delete(i);
+                    }
                     Ok(_) => continue,
                     Err(_) => break,
                 }
@@ -151,7 +173,6 @@ impl<T: Default + Copy + PartialEq> Vector<T> {
     }
 }
 
-
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -166,7 +187,7 @@ mod tests {
         assert_eq!(v.at(100), Err("Vector index out of bounds".to_string()));
     }
 
-   #[test]
+    #[test]
     fn test_filled_vector() {
         let mut v = Vector::<i32>::new();
 
